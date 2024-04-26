@@ -1,5 +1,5 @@
 [package]
-name = "hellorust"
+name = "roguelike_tut"
 version = "0.1.0"
 authors = ["propfeds"]
 edition = "2021"
@@ -8,3 +8,5 @@ edition = "2021"
 
 [dependencies]
 rltk = {version = "0.8.7"}
+specs = "0.20.0"
+specs-derive = "0.4.1"
