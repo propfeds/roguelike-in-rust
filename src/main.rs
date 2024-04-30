@@ -76,10 +76,12 @@ fn main() -> rltk::BError
     gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
 
-    gs.ecs.insert(new_map_rooms_corridors());
+    let (rooms, map) = new_map_rooms_corridors();
+    gs.ecs.insert(map);
+    let (player_x, player_y) = rooms[0].centre();
 
     gs.ecs.create_entity()
-    .with(Position{x: 40, y: 25})
+    .with(Position{x: player_x, y: player_y})
     .with(Renderable
     {
         glyph: rltk::to_cp437('@'),
