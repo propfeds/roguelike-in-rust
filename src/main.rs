@@ -8,6 +8,8 @@ mod player;
 pub use player::*;
 mod rect;
 pub use rect::Rect;
+mod visibility_system;
+pub use visibility_system::VisibilitySystem;
 
 pub struct State
 {
@@ -23,8 +25,7 @@ impl GameState for State
 
         ctx.cls();
 
-        let map = self.ecs.fetch::<Vec<TileType>>();
-        draw_map(&map, ctx);
+        draw_map(&self.ecs, ctx);
 
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
@@ -41,6 +42,7 @@ struct LeftWalker {}
 impl<'a> System<'a> for LeftWalker
 {
     type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
+
     fn run(&mut self, (lefty, mut pos): Self::SystemData)
     {
         for (_lefty, pos) in (&lefty, &mut pos).join()
@@ -60,6 +62,8 @@ impl State
     {
         let mut lw = LeftWalker{};
         lw.run_now(&self.ecs);
+        let mut vis = VisibilitySystem{};
+        vis.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -73,12 +77,13 @@ fn main() -> rltk::BError
     let mut gs = State{ecs: World::new()};
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
+    gs.ecs.register::<Viewshed>();
     gs.ecs.register::<LeftMover>();
     gs.ecs.register::<Player>();
 
-    let (rooms, map) = new_map_rooms_corridors();
+    let map = Map::new_map_rooms_corridors();
+    let (player_x, player_y) = map.rooms[0].centre();
     gs.ecs.insert(map);
-    let (player_x, player_y) = rooms[0].centre();
 
     gs.ecs.create_entity()
     .with(Position{x: player_x, y: player_y})
@@ -87,6 +92,12 @@ fn main() -> rltk::BError
         glyph: rltk::to_cp437('@'),
         fg: RGB::named(rltk::YELLOW),
         bg: RGB::named(rltk::BLACK)
+    })
+    .with(Viewshed
+    {
+        visible_tiles: Vec::new(),
+        range: 7,
+        dirty: true
     })
     .with(Player{})
     .build();
